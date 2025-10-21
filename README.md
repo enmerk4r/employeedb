@@ -1,2 +1,1 @@
-# employeedb
-My test project for learning C
+# This is a readme file
