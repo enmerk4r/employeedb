@@ -13,6 +13,7 @@ void print_usage(char *argv[]) {
     printf("\t -f  - (required) path to database file\n");
     printf("\t -l  - list the employees\n");
     printf("\t -a  - add via CSV list of (name,address,hours)\n");
+    printf("\t -u  - update employee hours via CSV list of (name,hours)\n");
     return;
 }
 
@@ -21,6 +22,7 @@ int main(int argc, char *argv[]) {
     char *filepath = NULL;
     char *addstring = NULL;
     char *removename = NULL;
+    char *updatehours = NULL;
 	int c;
     bool list = false;
 
@@ -29,7 +31,7 @@ int main(int argc, char *argv[]) {
     struct dbheader_t *dbhdr = NULL;
     struct employee_t *employees = NULL;
 
-    while ((c = getopt(argc, argv, "nf:a:lr:")) != -1){
+    while ((c = getopt(argc, argv, "nf:a:lr:u:")) != -1){
         switch (c){
             case 'n':
                 newfile = true;
@@ -45,6 +47,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'r':
                 removename = optarg;
+                break;
+            case 'u':
+                updatehours = optarg;
                 break;
             case '?':
                 printf("Unknown option -%c\n", c);
@@ -100,6 +105,10 @@ int main(int argc, char *argv[]) {
 
     if (removename) {
         remove_employee(dbhdr, &employees, removename);
+    }
+
+    if (updatehours) {
+        update_hours(dbhdr, employees, updatehours);
     }
 
     if (list) {

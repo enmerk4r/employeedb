@@ -115,6 +115,28 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 
 }
 
+int update_hours(struct dbheader_t *dbhdr, struct employee_t *employees, char *hoursstring)
+{
+    if (NULL == dbhdr) return STATUS_ERROR;
+    if (NULL == employees) return STATUS_ERROR;
+    if (NULL == hoursstring) return STATUS_ERROR;
+
+    char *name = strtok(hoursstring, ",");
+    if (NULL == name) return STATUS_ERROR;
+    char *hours = strtok(NULL, ",");
+    if (NULL == hours) return STATUS_ERROR;
+
+    for (int i = 0; i < dbhdr->count; i++){
+        if (strncmp(employees[i].name, name, NAME_LEN) == 0){
+            int old = employees[i].hours;
+            employees[i].hours = atoi(hours);
+            printf("Updated %s from %d hrs to %d hrs\n", employees[i].name, old, employees[i].hours);
+        }
+    }
+
+    return STATUS_SUCCESS;
+}
+
 int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
     if (fd < 0){
         printf("Got a bad FD from the user\n");
