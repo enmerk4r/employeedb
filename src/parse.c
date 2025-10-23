@@ -35,7 +35,7 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
     if (NULL == hours) return STATUS_ERROR;
 
     struct employee_t *e = *employees;
-    e = realloc(e, sizeof(struct employee_t) * dbhdr->count + 1);
+    e = realloc(e, sizeof(struct employee_t) * (dbhdr->count + 1));
     if (e == NULL){
         return STATUS_ERROR;
     }
@@ -49,6 +49,45 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
     *employees = e;
 
     return STATUS_SUCCESS;
+}
+
+int remove_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *removename){
+    
+    if (NULL == dbhdr) return STATUS_ERROR;
+    if (NULL == employees) return STATUS_ERROR;
+    if (NULL == *employees) return STATUS_ERROR;
+    if (NULL == removename) return STATUS_ERROR;
+
+    unsigned short count = dbhdr->count;
+
+    struct employee_t *e = *employees;
+    
+    int w = 0;                    // write index
+    for (int r = 0; r < count; r++){  // read index
+        if (strncmp(e[r].name, removename, NAME_LEN) != 0){
+            if (w != r) e[w] = e[r];
+            w++;
+        }
+    }
+
+    dbhdr->count = w;
+
+    if (w == 0){
+        free(e);
+        *employees = NULL;
+        return STATUS_SUCCESS;
+    }
+
+    // Reallocate memory
+    struct employee_t *tmp = realloc(e, w * sizeof *e);
+    if (tmp != NULL){
+        e = tmp;
+    }
+
+    *employees = e;
+
+    return STATUS_SUCCESS;
+
 }
 
 int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employeesOut) {
@@ -74,8 +113,6 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
     *employeesOut = employees;
     return STATUS_SUCCESS;
 
-
-
 }
 
 int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) {
@@ -85,9 +122,10 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
     }
 
     int realcount = dbhdr->count;
+    unsigned int new_size = sizeof(struct dbheader_t) + (sizeof(struct employee_t) * realcount);
 
     dbhdr->magic = htonl(dbhdr->magic);
-    dbhdr->filesize = htonl(sizeof(struct dbheader_t) + (sizeof(struct employee_t) * realcount));
+    dbhdr->filesize = htonl(new_size);
     dbhdr->count = htons(dbhdr->count);
     dbhdr->version = htons(dbhdr->version);
 
@@ -101,6 +139,13 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
         employees[i].hours = htonl(employees[i].hours);
         write(fd, &employees[i], sizeof(struct employee_t));
     }
+
+    // shrink file to match header->filesize
+    if (ftruncate(fd, new_size) == -1) {
+        perror("ftruncate");
+        return STATUS_ERROR;
+    }
+
     return 0;
 }	
 
