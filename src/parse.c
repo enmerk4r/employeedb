@@ -12,6 +12,10 @@
 
 void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
     int i = 0;
+
+    if (NULL == dbhdr) return STATUS_ERROR;
+    if (NULL == employees) return STATUS_ERROR;
+
     for (i=0; i < dbhdr->count; i++) {
         printf("Employee %d\n", i);
         printf("\tName: %s\n", employees[i].name);
